@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # Nginx Proxy Manager for SSL and domain management
+  nginx-proxy-manager:
+    image: "jc21/nginx-proxy-manager:latest"
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80" # Public HTTP Port
+      - "443:443" # Public HTTPS Port
+      - "81:81" # Admin Web Port
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "/bin/check-health"]
+      interval: 10s
+      timeout: 3s
+
+  # CyberGuards Website
+  cyberguards-website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyberguards-website
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - proxy
+    expose:
+      - "80" # Only expose to internal network, not to host
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - nginx-proxy-manager
+
+networks:
+  proxy:
+    driver: bridge
