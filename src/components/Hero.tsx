@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
 
 const Hero: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
